@@ -1,0 +1,31 @@
+description: DRP Pipeline for RomanDESC simulations of LSSTCam
+instrument: lsst.obs.lsst.LsstCam
+imports:
+  - $DRP_PIPE_DIR/pipelines/_ingredients/DRP-minimal-calibration.yaml
+
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      doDefect: false
+      doBrighterFatter: true
+      doBias: true
+      doDark: true
+      doFlat: true
+      doLinearize: false
+      doFringe: false
+      doCrosstalk: false
+  calibrateImage:
+    class: lsst.pipe.tasks.calibrateImage.CalibrateImageTask
+    config:
+      connections.astrometry_ref_cat: "uw_stars_20240529_tp_aug_2021_downselect"
+      connections.photometry_ref_cat: "uw_stars_20240529_tp_aug_2021_downselect"
+      python: |
+        from lsst.meas.algorithms import ColorLimit
+        config.photometry.applyColorTerms = False
+        config.photometry.match.referenceSelection.magLimit.fluxField = "lsst_i_flux"
+        config.photometry.match.referenceSelection.colorLimits["g-r"] = ColorLimit(primary="lsst_g_flux", secondary="lsst_r_flux", minimum=0.4, maximum=2.0)
+
+        config.astrometry_ref_loader.filterMap = {band: 'lsst_%s' % (band) for band in 'gri'}
+        config.astrometry_ref_loader.anyFilterMapsToThis = None
+        config.photometry_ref_loader.filterMap = {band: 'lsst_%s' % (band) for band in 'gri'}

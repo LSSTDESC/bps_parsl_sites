@@ -1,0 +1,44 @@
+includeConfigs:
+  - ${DRP_PIPE_DIR}/bps/resources/LSSTCam/DRP.yaml
+
+LSST_VERSION: w_2025_43
+
+pipelineYaml: "DRP.yaml#isr"
+
+payload:
+  payloadName: bps_parsl_test_{LSST_VERSION}
+  butlerConfig: /repo/roman-desc-sims
+  inCollection: LSSTCam/defaults
+  dataQuery: "instrument='LSSTCam' and exposure in (5025070501810..5025070501820)"
+
+numberOfRetries: 3
+requestMemory: 4000
+memoryMultiplier: 2
+extraQgraphOptions: "--dataset-query-constraint raw"
+extraRunQuantumOptions: "--no-raise-on-partial-outputs"
+
+wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+computeSite: work_queue
+#computeSite: local
+
+parsl:
+  log_level: WARN
+
+site:
+  local:
+    class: lsst.ctrl.bps.parsl.sites.Local
+    cores: 8
+    monitorEnable: true
+    monitorFilename: runinfo/monitoring.db
+  work_queue:
+    class: bps_parsl_sites.SlurmWorkQueue
+    nodes_per_block: 3
+    walltime: "00:30:00"
+    exclusive: true
+    qos: debug
+    constraint: cpu
+    scheduler_options: |
+      #SBATCH --module=cvmfs
+    worker_options: "--memory=480000"  # total memory in MB
+    monitorEnable: true
+    monitorFilename: runinfo/monitoring.db
