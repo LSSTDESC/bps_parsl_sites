@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+import os
+import argparse
+import sqlite3
+import pandas as pd
+from bps_parsl_sites import query_workflow, print_status
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--db_file", type=str, default="./runinfo/monitoring.db", help="monitoring db file"
+)
+parser.add_argument(
+    "--workflow_name", type=str, default=None, help="workflow name in db file"
+)
+parser.add_argument("--run_id", type=str, default=None, help="run_id in db file")
+args = parser.parse_args()
+
+
+db_file = args.db_file
+assert os.path.isfile(db_file)
+workflow_name = (
+    f"bps.{os.environ['USER']}" if args.workflow_name is None else args.workflow_name
+)
+with sqlite3.connect(db_file) as con:
+    if args.run_id is not None:
+        run_id = args.run_id
+    else:
+        query = (
+            "select run_id from workflow where "
+            f"workflow_name='{workflow_name}' "
+            "order by time_began desc limit 1"
+        )
+        run_id = pd.read_sql(query, con).iloc[0]["run_id"]
+    try:
+        df0 = query_workflow(run_id, db_file=db_file)
+        print_status(df0)
+    except (IndexError, FileNotFoundError):
+        df0 = pd.read_sql("select * from workflow", con)
+        pd.set_option("display.max_rows", None)
+        pd.set_option("display.width", None)
+        print("Available workflows:")
+        print(df0["run_id workflow_name time_began tasks_completed_count".split()])
