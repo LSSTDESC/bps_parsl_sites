@@ -5,7 +5,7 @@ from lsst.ctrl.bps.parsl.configuration import get_bps_config_value
 from lsst.ctrl.bps.parsl.job import ParslJob
 from lsst.ctrl.bps.parsl.sites import WorkQueue
 
-from .utils import get_free_port, get_slurm_provider
+from .utils import get_slurm_provider
 
 
 __all__ = ["SlurmWorkQueue"]
@@ -37,7 +37,7 @@ class SlurmWorkQueue(WorkQueue):
         label: str,
         provider: ExecutionProvider,
         *,
-        port: int = None,
+        port: int = 0,
         worker_options: str = "",
         wq_max_retries: int = 1,
     ) -> ParslExecutor:
@@ -51,7 +51,7 @@ class SlurmWorkQueue(WorkQueue):
         provider : `ExecutionProvider`
             Parsl execution provider, e.g., `SlurmProvider`.
         port : `int`, optional
-            Port used by work_queue.  Default: ``None``
+            Port used by work_queue.  Default: `0`
         worker_options : `str`, optional
             Extra options to pass to work_queue workers, e.g.,
             ``"--memory=90000"``. Default: `""`.
@@ -61,8 +61,6 @@ class SlurmWorkQueue(WorkQueue):
             control the number of retries.  Default: ``1``.
         """
         port = get_bps_config_value(self.site, "port", int, port)
-        if port is None:
-            port = get_free_port()
         return super().make_executor(
             label,
             provider,
