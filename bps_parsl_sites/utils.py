@@ -5,6 +5,8 @@ from parsl.providers import SlurmProvider
 from parsl.providers.base import ExecutionProvider
 from parsl.providers import LocalProvider
 
+from lsst.ctrl.bps import BpsConfig
+
 from lsst.ctrl.bps.parsl.configuration import get_bps_config_value, get_workflow_name
 from lsst.ctrl.bps.parsl.site import SiteConfig
 
@@ -42,7 +44,10 @@ def get_slurm_provider(
     scheduler_options = get_bps_config_value(
         site_config.site, "scheduler_options", str, scheduler_options
     )
-
+    provider_options = get_bps_config_value(
+        site_config.site, "provider_options", BpsConfig, provider_options
+    )
+    provider_options = dict(provider_options)
     # Replace any filepath separators with underscores since Parsl
     # creates a shell script named f"cmd_{job_name}.sh" using the
     # --job-name value in the sbatch script.
