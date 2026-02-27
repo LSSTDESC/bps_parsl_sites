@@ -47,7 +47,7 @@ def get_slurm_provider(
     provider_options = get_bps_config_value(
         site_config.site, "provider_options", BpsConfig, provider_options
     )
-    provider_options = dict(provider_options)
+    provider_options = {} if provider_options is None else dict(provider_options)
     # Replace any filepath separators with underscores since Parsl
     # creates a shell script named f"cmd_{job_name}.sh" using the
     # --job-name value in the sbatch script.
