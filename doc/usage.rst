@@ -78,7 +78,7 @@ Here are notes on some of the entries in this configuration block:
     is also a ``SlurmWorkQueue`` class that uses the prior generation of executor,
     ``WorkQueueExcutor`` for managing the resources in a similar fashion.  Both ``TaskVine``
     and ``Work Queue`` are scheduler implementations developed by 
-    [The Cooperative Computing Lab](https://ccl.cse.nd.edu/software).
+    `The Cooperative Computing Lab <https://ccl.cse.nd.edu/software>`_.
   * **walltime**:  The wall time request for each batch submission. This must
     have the format ``hours:minutes:seconds`` since parsl tokenizes this string
     into three fields and will raise an error if it doesn't find all three.
@@ -95,14 +95,14 @@ Here are notes on some of the entries in this configuration block:
     and the overall number of nodes should be controlled via the blocks settings
     in the `provider_options` below.
   * **provider_options**:  These options are passed to through parsl's 
-    [`SlurmProvider`](https://github.com/Parsl/parsl/blob/2026.02.23/parsl/providers/slurm/slurm.py#L76)
+    `SlurmProvider <https://github.com/Parsl/parsl/blob/2026.02.23/parsl/providers/slurm/slurm.py#L76>`_
     class as ``#SBATCH`` entries.  Each block will be submitted as a separate slurm
     batch job, so setting ``init_blocks=1`` will provide workers as soon as possible and
     pipetask jobs can start running.  The remaining requested blocks, as specified by
     `max_blocks`, will be submitted in order to provide workers for all pending tasks.
     As the number of tasks descrease or increae over the course of the overall workflow execution,
     blocks will be released or requested, respectively, within the ``min_blocks`` and ``max_blocks``
-    bounds.   See the [parsl documentation](https://parsl.readthedocs.io/en/stable/userguide/configuration/providers/elasticity.html).
+    bounds.   See the `parsl documentation <https://parsl.readthedocs.io/en/stable/userguide/configuration/providers/elasticity.html>`_.
   * **scheduler_options**:  These are additional entries, not covered by the
     above parameters, to add to the sbatch submission scripts generated
     by parsl.
