@@ -1,7 +1,7 @@
 includeConfigs:
   - ${DRP_PIPE_DIR}/bps/resources/LSSTCam/DRP.yaml
 
-LSST_VERSION: w_2025_43
+LSST_VERSION: w_2026_09
 
 pipelineYaml: "DRP.yaml#isr"
 
@@ -18,7 +18,7 @@ extraQgraphOptions: "--dataset-query-constraint raw"
 extraRunQuantumOptions: "--no-raise-on-partial-outputs"
 
 wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
-computeSite: work_queue
+computeSite: task_vine
 #computeSite: local
 
 parsl:
@@ -30,13 +30,17 @@ site:
     cores: 8
     monitorEnable: true
     monitorFilename: runinfo/monitoring.db
-  work_queue:
-    class: bps_parsl_sites.SlurmWorkQueue
-    nodes_per_block: 3
+  task_vine:
+    class: bps_parsl_sites.SlurmTaskVine
     walltime: "00:30:00"
-    exclusive: true
     qos: debug
     constraint: cpu
+    exclusive: true
+    nodes_per_block: 1
+    provider_options:
+      init_blocks: 1
+      min_blocks: 0
+      max_blocks: 5
     scheduler_options: |
       #SBATCH --module=cvmfs
     worker_options: "--memory=480000"  # total memory in MB
