@@ -19,12 +19,12 @@ To configure ``bps`` to use parsl and the `TaskVine` site configuration in this 
 
 .. code-block:: yaml
 
-   wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
-   #computeSite: local
-   computeSite: task_vine
+  wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+  #computeSite: local
+  computeSite: task_vine
 
-   parsl:
-     log_level: WARN
+  parsl:
+    log_level: WARN
 
   site:
     local:
