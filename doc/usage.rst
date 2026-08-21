@@ -15,6 +15,13 @@ For running at NERSC, it's probably easiest to use the CVMFS distributions of th
    (lsst-scipipe-12.0.0-exact) $ setup lsst_distrib
    (lsst-scipipe-12.0.0-exact) $ setup -r <path_to>/bps_parsl_sites -j
 
+To build the package, do
+
+.. code-block:: bash
+
+  $ cd <path_to>/bps_parsl_sites
+  $ scons
+
 To configure ``bps`` to use parsl and the `TaskVine` site configuration in this package, a code block like the following can be added to the bps yaml config file:
 
 .. code-block:: yaml
