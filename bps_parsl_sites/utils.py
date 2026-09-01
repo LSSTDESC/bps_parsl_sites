@@ -1,3 +1,5 @@
+from contextlib import closing
+import socket
 from typing import Any
 
 from parsl.launchers import SrunLauncher
@@ -10,7 +12,7 @@ from lsst.ctrl.bps import BpsConfig
 from lsst.ctrl.bps.parsl.configuration import get_bps_config_value, get_workflow_name
 from lsst.ctrl.bps.parsl.site import SiteConfig
 
-__all__ = ["get_slurm_provider", "get_local_provider"]
+__all__ = ["get_slurm_provider", "get_local_provider", "get_free_port"]
 
 
 def get_slurm_provider(
@@ -98,3 +100,14 @@ def get_local_provider(site_config: SiteConfig) -> ExecutionProvider:
         provider_options["launcher"] = SrunLauncher(overrides="-K0 -k --cpu-bind=none")
     provider = LocalProvider(**provider_options)
     return provider
+
+
+def get_free_port():
+    """Return a free port on the local host.
+    See https://stackoverflow.com/questions/1365265/
+    """
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        port = s.getsockname()[1]
+        return port

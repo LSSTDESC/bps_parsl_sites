@@ -10,7 +10,7 @@ from lsst.ctrl.bps.parsl.configuration import get_bps_config_value
 from lsst.ctrl.bps.parsl.job import ParslJob
 from lsst.ctrl.bps.parsl.site import SiteConfig
 
-from .utils import get_slurm_provider, get_local_provider
+from .utils import get_slurm_provider, get_local_provider, get_free_port
 
 
 __all__ = ["SlurmTaskVine", "LocalTaskVine"]
@@ -72,8 +72,9 @@ class TaskVine(SiteConfig):
         max_retries = get_bps_config_value(
             self.site, "tv_max_retries", int, tv_max_retries
         )
+        port = get_free_port()
         manager_config = TaskVineManagerConfig(
-            address=self.get_address(), max_retries=max_retries
+            port=port, address=self.get_address(), max_retries=max_retries
         )
         factory_config = TaskVineFactoryConfig(worker_options=worker_options)
         return TaskVineExecutor(
