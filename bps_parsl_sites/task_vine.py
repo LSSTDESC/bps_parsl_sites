@@ -73,17 +73,34 @@ class TaskVine(SiteConfig):
             self.site, "tv_max_retries", int, tv_max_retries
         )
         port = get_free_port()
+        full_label = f"{label}_{port}"
+        self._executor_label = full_label
         manager_config = TaskVineManagerConfig(
             port=port, address=self.get_address(), max_retries=max_retries
         )
         factory_config = TaskVineFactoryConfig(worker_options=worker_options)
         return TaskVineExecutor(
-            label=label,
+            label=full_label,
             worker_launch_method="provider",
             manager_config=manager_config,
             factory_config=factory_config,
             provider=provider,
         )
+
+    def select_executor(self, job: "ParslJob") -> str:
+        """Get the ``label`` of the executor to use to execute a job
+
+        Parameters
+        ----------
+        job : `ParslJob`
+            Job to be executed.
+
+        Returns
+        -------
+        label : `str`
+            Label of executor to use to execute ``job``.
+        """
+        return self._executor_label
 
 
 class SlurmTaskVine(TaskVine):
@@ -91,38 +108,8 @@ class SlurmTaskVine(TaskVine):
     def get_executors(self) -> list[ParslExecutor]:
         return [self.make_executor("slurm_task_vine", get_slurm_provider(self))]
 
-    def select_executor(self, job: "ParslJob") -> str:
-        """Get the ``label`` of the executor to use to execute a job
-
-        Parameters
-        ----------
-        job : `ParslJob`
-            Job to be executed.
-
-        Returns
-        -------
-        label : `str`
-            Label of executor to use to execute ``job``.
-        """
-        return "slurm_task_vine"
-
 
 class LocalTaskVine(TaskVine):
 
     def get_executors(self) -> list[ParslExecutor]:
         return [self.make_executor("local_task_vine", get_local_provider(self))]
-
-    def select_executor(self, job: "ParslJob") -> str:
-        """Get the ``label`` of the executor to use to execute a job
-
-        Parameters
-        ----------
-        job : `ParslJob`
-            Job to be executed.
-
-        Returns
-        -------
-        label : `str`
-            Label of executor to use to execute ``job``.
-        """
-        return "local_task_vine"

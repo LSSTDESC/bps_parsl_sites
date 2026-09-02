@@ -14,6 +14,9 @@ from lsst.ctrl.bps.parsl.site import SiteConfig
 from bps_parsl_sites.task_vine import TaskVine, SlurmTaskVine, LocalTaskVine
 
 
+FIXED_PORT = 54321
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -52,6 +55,11 @@ class TestTaskVineInit(unittest.TestCase):
     def test_local_is_task_vine_subclass(self):
         self.assertTrue(issubclass(LocalTaskVine, TaskVine))
 
+    def test_select_executor_defined_on_base_class(self):
+        self.assertIn("select_executor", TaskVine.__dict__)
+        self.assertNotIn("select_executor", SlurmTaskVine.__dict__)
+        self.assertNotIn("select_executor", LocalTaskVine.__dict__)
+
 
 # ---------------------------------------------------------------------------
 # Tests: TaskVine.make_executor
@@ -62,12 +70,18 @@ class TestMakeExecutor(unittest.TestCase):
     def setUp(self):
         self.site = _make_site_instance(SlurmTaskVine)
         self.provider = MagicMock(spec=ExecutionProvider)
-        patcher = patch(
+        gcbv_patcher = patch(
             'bps_parsl_sites.task_vine.get_bps_config_value',
             side_effect=lambda site, key, typ, default: default,
         )
-        self.mock_gcbv = patcher.start()
-        self.addCleanup(patcher.stop)
+        gfp_patcher = patch(
+            'bps_parsl_sites.task_vine.get_free_port',
+            return_value=FIXED_PORT,
+        )
+        self.mock_gcbv = gcbv_patcher.start()
+        self.mock_gfp = gfp_patcher.start()
+        self.addCleanup(gcbv_patcher.stop)
+        self.addCleanup(gfp_patcher.stop)
 
     def test_returns_task_vine_executor(self):
         ex = self.site.make_executor("my_label", self.provider)
@@ -75,7 +89,7 @@ class TestMakeExecutor(unittest.TestCase):
 
     def test_label_passed_through(self):
         ex = self.site.make_executor("custom_label", self.provider)
-        self.assertEqual(ex.label, "custom_label")
+        self.assertEqual(ex.label, f"custom_label_{FIXED_PORT}")
 
     def test_worker_launch_method_is_provider(self):
         ex = self.site.make_executor("lbl", self.provider)
@@ -103,9 +117,8 @@ class TestMakeExecutor(unittest.TestCase):
         self.assertGreater(ex.manager_config.port, 0)
 
     def test_manager_config_port_from_get_free_port(self):
-        with patch('bps_parsl_sites.task_vine.get_free_port', return_value=54321):
-            ex = self.site.make_executor("lbl", self.provider)
-        self.assertEqual(ex.manager_config.port, 54321)
+        ex = self.site.make_executor("lbl", self.provider)
+        self.assertEqual(ex.manager_config.port, FIXED_PORT)
 
     def test_default_max_retries_is_1(self):
         ex = self.site.make_executor("lbl", self.provider)
@@ -170,10 +183,16 @@ class TestSlurmTaskVine(unittest.TestCase):
             'bps_parsl_sites.task_vine.get_bps_config_value',
             side_effect=lambda site, key, typ, default: default,
         )
+        gfp_patcher = patch(
+            'bps_parsl_sites.task_vine.get_free_port',
+            return_value=FIXED_PORT,
+        )
         self.mock_gsp = slurm_patcher.start()
         self.mock_gcbv = gcbv_patcher.start()
+        self.mock_gfp = gfp_patcher.start()
         self.addCleanup(slurm_patcher.stop)
         self.addCleanup(gcbv_patcher.stop)
+        self.addCleanup(gfp_patcher.stop)
 
     def test_get_executors_returns_list(self):
         result = self.site.get_executors()
@@ -189,7 +208,7 @@ class TestSlurmTaskVine(unittest.TestCase):
 
     def test_executor_label_is_slurm_task_vine(self):
         result = self.site.get_executors()
-        self.assertEqual(result[0].label, "slurm_task_vine")
+        self.assertEqual(result[0].label, f"slurm_task_vine_{FIXED_PORT}")
 
     def test_get_slurm_provider_called(self):
         self.site.get_executors()
@@ -197,12 +216,14 @@ class TestSlurmTaskVine(unittest.TestCase):
 
     def test_select_executor_returns_string(self):
         job = MagicMock()
+        self.site.get_executors()
         result = self.site.select_executor(job)
         self.assertIsInstance(result, str)
 
     def test_select_executor_returns_slurm_task_vine(self):
         job = MagicMock()
-        self.assertEqual(self.site.select_executor(job), "slurm_task_vine")
+        self.site.get_executors()
+        self.assertEqual(self.site.select_executor(job), f"slurm_task_vine_{FIXED_PORT}")
 
     def test_select_executor_label_matches_get_executors_label(self):
         job = MagicMock()
@@ -211,6 +232,7 @@ class TestSlurmTaskVine(unittest.TestCase):
 
     def test_select_executor_independent_of_job(self):
         job1, job2 = MagicMock(), MagicMock()
+        self.site.get_executors()
         self.assertEqual(
             self.site.select_executor(job1),
             self.site.select_executor(job2),
@@ -233,10 +255,16 @@ class TestLocalTaskVine(unittest.TestCase):
             'bps_parsl_sites.task_vine.get_bps_config_value',
             side_effect=lambda site, key, typ, default: default,
         )
+        gfp_patcher = patch(
+            'bps_parsl_sites.task_vine.get_free_port',
+            return_value=FIXED_PORT,
+        )
         self.mock_glp = local_patcher.start()
         self.mock_gcbv = gcbv_patcher.start()
+        self.mock_gfp = gfp_patcher.start()
         self.addCleanup(local_patcher.stop)
         self.addCleanup(gcbv_patcher.stop)
+        self.addCleanup(gfp_patcher.stop)
 
     def test_get_executors_returns_list(self):
         result = self.site.get_executors()
@@ -252,7 +280,7 @@ class TestLocalTaskVine(unittest.TestCase):
 
     def test_executor_label_is_local_task_vine(self):
         result = self.site.get_executors()
-        self.assertEqual(result[0].label, "local_task_vine")
+        self.assertEqual(result[0].label, f"local_task_vine_{FIXED_PORT}")
 
     def test_get_local_provider_called(self):
         self.site.get_executors()
@@ -260,12 +288,14 @@ class TestLocalTaskVine(unittest.TestCase):
 
     def test_select_executor_returns_string(self):
         job = MagicMock()
+        self.site.get_executors()
         result = self.site.select_executor(job)
         self.assertIsInstance(result, str)
 
     def test_select_executor_returns_local_task_vine(self):
         job = MagicMock()
-        self.assertEqual(self.site.select_executor(job), "local_task_vine")
+        self.site.get_executors()
+        self.assertEqual(self.site.select_executor(job), f"local_task_vine_{FIXED_PORT}")
 
     def test_select_executor_label_matches_get_executors_label(self):
         job = MagicMock()
@@ -274,6 +304,7 @@ class TestLocalTaskVine(unittest.TestCase):
 
     def test_select_executor_independent_of_job(self):
         job1, job2 = MagicMock(), MagicMock()
+        self.site.get_executors()
         self.assertEqual(
             self.site.select_executor(job1),
             self.site.select_executor(job2),
